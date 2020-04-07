@@ -1,11 +1,10 @@
-#include <SD.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include "config.h"
 
-const char* SSID = "NETZWERKNAME";
-const char* PSK = "NETZWERKSCHLÜSSEL";
-const char* MQTT_BROKER = "BROKER_IP";
+const char* SSID = WIFI_SSID;
+const char* PSK = PASSWORD;
+const char* MQTT_BROKER = BROKER_IP;
  
 WiFiClient espClient;
 PubSubClient client(espClient);
