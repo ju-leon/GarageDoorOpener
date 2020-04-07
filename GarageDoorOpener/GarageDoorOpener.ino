@@ -1,6 +1,8 @@
+#include <SD.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
- 
+#include "config.h"
+
 const char* SSID = "NETZWERKNAME";
 const char* PSK = "NETZWERKSCHLÜSSEL";
 const char* MQTT_BROKER = "BROKER_IP";
@@ -10,7 +12,8 @@ PubSubClient client(espClient);
 long lastMsg = 0;
 char msg[50];
 int value = 0;
- 
+
+
 void setup() {
     Serial.begin(115200);
     setup_wifi();
