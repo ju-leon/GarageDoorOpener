@@ -12,11 +12,15 @@ long lastMsg = 0;
 char msg[50];
 int value = 0;
 
+const int RELAY_PIN = D1;
 
 void setup() {
+    pinMode(RELAY_PIN, OUTPUT);
+  
     Serial.begin(115200);
     setup_wifi();
     client.setServer(MQTT_BROKER, 1883);
+    client.setCallback(callback);
 }
  
 void setup_wifi() {
@@ -31,6 +35,8 @@ void setup_wifi() {
         delay(500);
         Serial.print(".");
     }
+
+    randomSeed(micros());
  
     Serial.println("");
     Serial.println("WiFi connected");
@@ -38,28 +44,62 @@ void setup_wifi() {
     Serial.println(WiFi.localIP());
 }
 
- 
-void reconnect() {
-    while (!client.connected()) {
-        Serial.print("Reconnecting...");
-        if (!client.connect("ESP8266Client")) {
-            Serial.print("failed, rc=");
-            Serial.print(client.state());
-            Serial.println(" retrying in 5 seconds");
-            delay(5000);
-        }
-    }
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+
+  if ((char)payload[0] == '1') {
+    digitalWrite(RELAY_PIN, HIGH);   
+    delay(200);
+    digitalWrite(RELAY_PIN, LOW);
+
+    client.publish("openhab/garage/events", "Garage door: switched garage");
+  }
+
 }
+
+void reconnect() {
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    String clientId = "GarageDoor-";
+    clientId += String(random(0xffff), HEX);
+    // Attempt to connect
+    if (client.connect(clientId.c_str())) {
+      Serial.println("connected");
+      // Once connected, publish an announcement...
+      client.publish("outTopic", "hello world");
+      // ... and resubscribe
+      client.subscribe("openhab/garage/state2");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+
 void loop() {
  
     if (!client.connected()) {
         reconnect();
     }
     client.loop();
- 
-    snprintf (msg, 50, "Alive since %ld milliseconds", millis());
-    Serial.print("Publish message: ");
-    Serial.println(msg);
-    client.publish("/home/data", "Hello World");
-    delay(5000);
+    
+    unsigned long now = millis();
+    if (now - lastMsg > 5000) {
+      lastMsg = now;
+      ++value;
+      snprintf (msg, 50, "Garage door: online, since #%ld.000 seconds", value * 5);
+      Serial.print("Publish message: ");
+      Serial.println(msg);
+      client.publish("openhab/garage/events", msg);
+    }
 }
