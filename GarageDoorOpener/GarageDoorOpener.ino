@@ -8,7 +8,7 @@ const char* MQTT_BROKER = BROKER_IP;
  
 WiFiClient espClient;
 PubSubClient client(espClient);
-long lastMsg = 0;
+unsigned long lastMsg = 0;
 char msg[50];
 int value = 0;
 
@@ -92,12 +92,13 @@ void loop() {
         reconnect();
     }
     client.loop();
-    
+
+    //Now will owerflow after 50 days. Should not be an issue.
     unsigned long now = millis();
-    if (now - lastMsg > 5000) {
+    if (abs(now - lastMsg) > 5000) {
       lastMsg = now;
-      ++value;
-      snprintf (msg, 50, "Garage door: online, since #%ld.000 seconds", value * 5);
+      
+      snprintf (msg, 50, "Garage door: online, since %ld.000ms", now);
       Serial.print("Publish message: ");
       Serial.println(msg);
       client.publish("openhab/garage/events", msg);
