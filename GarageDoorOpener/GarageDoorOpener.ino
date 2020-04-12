@@ -14,8 +14,12 @@ int value = 0;
 
 const int RELAY_PIN = D1;
 
+bool ledState = false;
+
 void setup() {
     pinMode(RELAY_PIN, OUTPUT);
+
+    pinMode(LED_BUILTIN, OUTPUT);
   
     Serial.begin(115200);
     setup_wifi();
@@ -95,12 +99,16 @@ void loop() {
 
     //Now will owerflow after 50 days. Should not be an issue.
     unsigned long now = millis();
-    if (abs(now - lastMsg) > 5000) {
+    if (abs(now - lastMsg) > 2000) {
       lastMsg = now;
       
       snprintf (msg, 50, "Garage door: online, since %ld.000ms", now);
       Serial.print("Publish message: ");
       Serial.println(msg);
       client.publish("openhab/garage/events", msg);
+
+      ledState = !ledState;
+      digitalWrite(LED_BUILTIN, ledState);
+      
     }
 }
